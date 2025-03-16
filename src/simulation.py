@@ -22,11 +22,15 @@ class ServiceCategory(Enum):
 
 class ServicePlatformSimulation:
     def __init__(self, env, agent_configuration, mean_service_time, service_time_std=2, 
-                 enable_skills=True, enable_priority=True, time_dependent=True):
+                 enable_skills=True, enable_priority=True, time_dependent=True,
+                 hourly_pattern=None):
         self.env = env
         self.enable_skills = enable_skills
         self.enable_priority = enable_priority
         self.time_dependent = time_dependent
+        
+        # Store hourly pattern from real data if provided
+        self.hourly_pattern = hourly_pattern
         
         # Initialize agent pools by type if skills enabled
         if enable_skills:
@@ -268,6 +272,13 @@ class ServicePlatformSimulation:
             
         hour = self.get_current_hour()
         
+        # Use real data pattern if available, otherwise use default pattern
+        if self.hourly_pattern is not None and hour in self.hourly_pattern:
+            # Get the factor for current hour compared to average
+            hourly_factors = self.hourly_pattern
+            factor = hourly_factors[hour] * len(hourly_factors)  # Normalize to make average = 1
+            return base_rate * factor
+            
         # Define hourly patterns (busier during business hours)
         hourly_factors = [
             0.2,  # 12 AM - very low traffic
